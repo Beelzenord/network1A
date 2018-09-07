@@ -26,14 +26,67 @@ public class Client {
       InetAddress IPAddress = InetAddress.getByName("localhost");
       byte[] sendData = new byte[1024];
       byte[] receiveData = new byte[1024];
-      String sentence = inFromUser.readLine();
-      sendData = sentence.getBytes();
-      DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
-      clientSocket.send(sendPacket);
-      DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-      clientSocket.receive(receivePacket);
-      String modifiedSentence = new String(receivePacket.getData());
-      System.out.println("FROM SERVER:" + modifiedSentence);
-      clientSocket.close();
+      boolean linkedWithServer = false;
+      if(pokeServer(IPAddress,clientSocket)){
+          String sentence = inFromUser.readLine();
+          while(sentence!=null){
+              sendData = sentence.getBytes();
+              DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
+              clientSocket.send(sendPacket);
+              DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+              clientSocket.receive(receivePacket); 
+              String modifiedSentence = new String(receivePacket.getData());
+              System.out.println("FROM SERVER:" + modifiedSentence);
+              sentence = new String(inFromUser.readLine());
+              System.out.println("sentence " +sentence);
+          }
+           clientSocket.close();
+      }
+      
+      
+      
+      
+      
+     
    }
+    /**
+     *This is the protocol that initiates contact with the server if the protocol
+     * is fulfilled then the server accepts the client. if it fails then there is not connection
+     */
+    public static boolean pokeServer(InetAddress IPAddress, DatagramSocket clientSocket){
+        byte[] sendData = new byte[1024];
+        byte[] receiveData = new byte[1024];
+        String hello = "HELLO";
+        String ok = "OK";
+        String start = "START";
+        String ready = "READY";
+        String receivedString;
+        /**
+         *Send Hello
+         */
+        sendData = hello.getBytes();
+        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
+        try {
+            clientSocket.send(sendPacket); // sends hello
+            DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+            clientSocket.receive(receivePacket); // receives ok
+            receivedString = new String(receivePacket.getData());
+            System.out.println("[From Server] > " + receivedString );
+            if(!receivedString.trim().equals(ok)){
+                System.out.println("not ok");
+                return false;
+            } 
+            sendData = start.getBytes();
+            sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
+            clientSocket.send(sendPacket); // sends start
+            receivePacket = new DatagramPacket(receiveData, receiveData.length);
+            clientSocket.receive(receivePacket);
+            receivedString = new String(receivePacket.getData());
+            System.out.println("[From Server] > " + receivedString );
+            
+        } catch (IOException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return true;
+    }
 }
