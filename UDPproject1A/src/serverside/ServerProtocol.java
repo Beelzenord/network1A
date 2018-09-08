@@ -17,58 +17,65 @@ import java.util.logging.Logger;
  * @author fno
  */
 public class ServerProtocol {
+
     private String generatedString;
-    
-    public boolean pokedByClient( DatagramSocket socket){
+
+    public boolean pokedByClient(DatagramSocket socket, Boolean isBusy) {
         byte[] receiveData = new byte[1024];
         byte[] sendData = new byte[1024];
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         DatagramPacket sendPacket = null;
         System.out.println("poked by client");
         try {
-           
+
             socket.receive(receivePacket);
             String sentence = new String(receivePacket.getData());
             InetAddress IPAddress = receivePacket.getAddress();
             int port = receivePacket.getPort();
-            if(!sentence.trim().equals("HELLO")){
+            if (!sentence.trim().equals("HELLO")) {
                 sendData = "Error at hello".getBytes();
                 sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                 socket.send(sendPacket);
                 return false;
-            }
-            else{
+            } else {
                 System.out.println("[From Client] > " + sentence);
                 sendData = "OK".getBytes();
-                sendPacket =new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                 socket.send(sendPacket);
             }
             receivePacket = new DatagramPacket(receiveData, receiveData.length);
             socket.receive(receivePacket);
             sentence = new String(receivePacket.getData());
-            if((!sentence.trim().equals("START")) || (!receivePacket.getAddress().equals(IPAddress)) || !(receivePacket.getPort()==port)){
-                  System.out.println(sentence);
-                 sendData = "Error at START".getBytes();
-                 sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-                 socket.send(sendPacket);
-                 return false;
-            }
-            else{
+            if ((!sentence.trim().equals("START")) || (!receivePacket.getAddress().equals(IPAddress)) || !(receivePacket.getPort() == port)) {
+                System.out.println(sentence);
+                sendData = "Error at START".getBytes();
+                sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                socket.send(sendPacket);
+                return false;
+            } else {
                 generateString();
                 System.out.println("[From Client] > " + sentence);
-                String ready = "READY " +generatedString.length();
+                String ready = "READY " + generatedString.length();
                 sendData = ready.getBytes();
-                sendPacket =new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                 socket.send(sendPacket);
             }
-            
+
         } catch (IOException ex) {
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         }
-       return true;
+        startClientThread(receivePacket, isBusy);
+        return true;
     }
 
     private void generateString() {
-                this.generatedString = "BROWN";
+        this.generatedString = "BROWN";
     }
+
+    private static void startClientThread(DatagramPacket receivePacket, Boolean isBusy) {
+        Thread th = new Thread(new GameServer(receivePacket, isBusy, 9876));
+        th.start();
+        System.out.println("returning from connectToClient");
+    }
+
 }
