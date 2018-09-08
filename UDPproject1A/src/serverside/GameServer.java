@@ -49,14 +49,15 @@ public class GameServer implements Runnable {
         replyData = replyString.getBytes();
         sendData(replyData, clientIPAddress, port);
 
-        while (isServingClient) {
+        
             try {
-                System.out.println("Thread waiting...");
+                while (isServingClient) {
+                    System.out.println("Thread waiting...");
                 packet = new DatagramPacket(new byte[maxbuff], maxbuff);
                 socket.receive(packet);
                 String sentence = new String(packet.getData()).toUpperCase();
                 System.out.println("THREAD RECEIVED: " + sentence);
-                String[] receive = sentence.trim().split("Q");
+                String[] receive = sentence.trim().split("/");
                 System.out.println("0: " + receive[0]);
                 System.out.println("1: " + receive[1]);
                 switch (receive[0]) {
@@ -76,19 +77,30 @@ public class GameServer implements Runnable {
                         replyString = "thread reply " + sentence;
                         sendData(replyString.getBytes(), clientIPAddress, port);
                 }
+                }
+                
 
             } catch (IOException e) {
                 System.out.println("Thread could not receive");
                 e.printStackTrace();
             } catch (ArrayIndexOutOfBoundsException e) {
                 System.out.println("protocol was probably broken");
+                replyString = " protocol was probably broken";
+                sendData(replyString.getBytes(), clientIPAddress, port);
                 e.printStackTrace();
             }
-
-        }
-        System.out.println("thread ending");
+            finally{
+                 System.out.println("thread ending");
+                 this.socket.close();
+            }
+      
+        
+       
+      
     }
 
+    
+    
     private String handleGuess(String g) {
         String[] word = correctWord.split("");
         String[] guess = currentGuess.split("");
@@ -115,5 +127,5 @@ public class GameServer implements Runnable {
             e.printStackTrace();
         }
     }
-
+    
 }

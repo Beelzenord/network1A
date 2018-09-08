@@ -19,19 +19,32 @@ import java.util.logging.Logger;
 public class ServerProtocol {
 
     private String generatedString;
-
+    private Thread th;
+    private boolean busy;
+    public ServerProtocol(){
+       //  th = new Thread(new GameServer(receivePacket, isBusy, 9876));
+    }
     public boolean pokedByClient(DatagramSocket socket, Boolean isBusy) {
+        this.busy = isBusy;
         byte[] receiveData = new byte[1024];
         byte[] sendData = new byte[1024];
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         DatagramPacket sendPacket = null;
         System.out.println("poked by client");
         try {
-
             socket.receive(receivePacket);
             String sentence = new String(receivePacket.getData());
             InetAddress IPAddress = receivePacket.getAddress();
             int port = receivePacket.getPort();
+            //if there is already a thread handling a separate client
+             if (th!=null){
+                 System.out.println("thread not null");
+                 if(th.isAlive()){
+                     System.out.println("Thread is alive");
+                     rejection(socket, receivePacket);
+                     return false;
+                 }
+            }
             if (!sentence.trim().equals("HELLO")) {
                 sendData = "Error at hello".getBytes();
                 sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
@@ -67,15 +80,39 @@ public class ServerProtocol {
         startClientThread(receivePacket, isBusy);
         return true;
     }
-
+    public void rejection(DatagramSocket socket, DatagramPacket receivePacket){
+        System.out.println("Rejection");
+        byte[] receiveData = new byte[1024];
+        byte[] sendData = new byte[1024];
+        String rejectionMessage = new String(receivePacket.getData());
+        try {
+            
+            System.out.println("(our client) " + rejectionMessage);
+            String string = "A client is already connected";
+            sendData = string.getBytes();
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, receivePacket.getAddress(), receivePacket.getPort());
+            socket.send(sendPacket);
+        } catch (IOException ex) {
+            Logger.getLogger(ServerProtocol.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
     private void generateString() {
         this.generatedString = "BROWN";
     }
 
-    private static void startClientThread(DatagramPacket receivePacket, Boolean isBusy) {
-        Thread th = new Thread(new GameServer(receivePacket, isBusy, 9876));
+    private void startClientThread(DatagramPacket receivePacket, Boolean isBusy) {
+        th = new Thread(new GameServer(receivePacket, isBusy, 9876));
         th.start();
         System.out.println("returning from connectToClient");
     }
+    public boolean getGameRunning(){
+        return th.isAlive();
+    }
+   
+    /*
+    public boolean getThreadStatus(){
+       return this.th.isAlive();
+    }*/
 
 }
