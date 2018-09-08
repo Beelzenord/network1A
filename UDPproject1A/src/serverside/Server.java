@@ -19,54 +19,52 @@ import java.util.logging.Logger;
  */
 public class Server {
 
+    public static final int SERVERPORT = 9876;
+
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-          DatagramSocket serverSocket;
+        DatagramSocket serverSocket;
+        Boolean isBusy = false;
         try {
-            serverSocket = new DatagramSocket(9876);
-            
-            
+            serverSocket = new DatagramSocket(SERVERPORT);
+
             byte[] receiveData = new byte[1024];
             byte[] sendData = new byte[1024];
             ServerProtocol serverProtocol = new ServerProtocol();
             System.out.println("Awaiting client activity... ");
-            
-            if(serverProtocol.pokedByClient(serverSocket)){
-                
-                while(true)
-               {
-                   // https://www.baeldung.com/udp-in-java
-                  DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                  receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                  serverSocket.receive(receivePacket);
-                  //= new String(packet.getData(), 0, packet.getLength());
-                  String sentence = new String( receivePacket.getData(), 0 ,receivePacket.getLength() );
-                  System.out.println("RECEIVED: " + sentence);
-                  InetAddress IPAddress = receivePacket.getAddress();
-                  int port = receivePacket.getPort();
-                  String capitalizedSentence = sentence.toUpperCase();
-                  sendData = capitalizedSentence.getBytes();
-                  DatagramPacket sendPacket =
-                  new DatagramPacket(sendData, sendData.length, IPAddress, port);
-                  serverSocket.send(sendPacket);
-                  
-               }
-                
+
+            if (serverProtocol.pokedByClient(serverSocket, isBusy)) {
+
+                while (true) {
+                    // https://www.baeldung.com/udp-in-java
+                    DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                    receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                    serverSocket.receive(receivePacket);
+                    //= new String(packet.getData(), 0, packet.getLength());
+                    String sentence = new String(receivePacket.getData(), 0, receivePacket.getLength());
+                    System.out.println("RECEIVED: " + sentence);
+                    InetAddress IPAddress = receivePacket.getAddress();
+                    int port = receivePacket.getPort();
+                    String capitalizedSentence = sentence.toUpperCase();
+                    sendData = capitalizedSentence.getBytes();
+                    DatagramPacket sendPacket
+                            = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                    serverSocket.send(sendPacket);
+
+                }
+
             }
-            
+
             /*
-            */
-            
+             */
         } catch (SocketException ex) {
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-        } 
-            
+        }
+
     }
-    
-    
-    
+
 }
