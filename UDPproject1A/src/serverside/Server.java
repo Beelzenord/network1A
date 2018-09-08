@@ -12,7 +12,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import errorhandling.IncorrectData;
 /**
  *
  * @author fno
@@ -44,6 +44,9 @@ public class Server {
                   //= new String(packet.getData(), 0, packet.getLength());
                   String sentence = new String( receivePacket.getData(), 0 ,receivePacket.getLength() );
                   System.out.println("RECEIVED: " + sentence);
+                  if(sentence.length()!=1){
+                      throw new IncorrectData("Phony");
+                  }
                   InetAddress IPAddress = receivePacket.getAddress();
                   int port = receivePacket.getPort();
                   String capitalizedSentence = sentence.toUpperCase();
@@ -62,6 +65,8 @@ public class Server {
         } catch (SocketException ex) {
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
+            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IncorrectData ex) {
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         } 
             
