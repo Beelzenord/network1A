@@ -20,46 +20,29 @@ import java.util.logging.Logger;
  * @author fno
  */
 public class Client {
-
+    
     public static void main(String args[]) throws Exception {
         BufferedReader inFromUser
                 = new BufferedReader(new InputStreamReader(System.in));
         DatagramSocket clientSocket = new DatagramSocket();
         InetAddress IPAddress = InetAddress.getByName("localhost");
         int port = 9876;
+        UserInfo userInfo = new UserInfo(IPAddress,port);
         byte[] sendData = new byte[1024];
         byte[] receiveData = new byte[1024];
         boolean linkedWithServer = false;
         if (pokeServer(IPAddress, clientSocket)) {
+            //
+            ClientListener clientListener = new ClientListener(clientSocket,userInfo);
+            clientListener.start();
 //            String sentence = inFromUser.readLine();
             String sentence = "";
             while (sentence != null) {
-                DatagramPacket receivePacket = new DatagramPacket(new byte[1024], 1024);
-                clientSocket.receive(receivePacket);
-                String modifiedSentence = new String(receivePacket.getData());
-                System.out.println("got : " + modifiedSentence);
-                String[] receive = modifiedSentence.trim().split("Q");
-                switch (receive[0]) {
-                    case "BYE":
-                        System.exit(0);
-                    case "USEPORT":
-                        port = Integer.parseInt(receive[1]);
-                        System.out.println("port: " + port);
-                        break;
-                    case "ALIVE":
-                        System.out.println("responding to ALIVE");
-                        DatagramPacket sendPacket = new DatagramPacket("ALIVE".getBytes(), "ALIVE".getBytes().length, IPAddress, port);
-                        clientSocket.send(sendPacket);
-                        break;
-                        
-                    default:
-                        System.out.println("FROM SERVER:" + modifiedSentence);
-                }
-                
+  
                 sentence = inFromUser.readLine();
                 sendData = new byte[1024];
                 sendData = sentence.getBytes();
-                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, userInfo.getIPAddress(), userInfo.getPortAddress());
                 clientSocket.send(sendPacket);
 
 
