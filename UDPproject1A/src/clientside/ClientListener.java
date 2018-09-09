@@ -35,8 +35,8 @@ public class ClientListener extends Thread{
         System.out.println("Client thread is running");
         
         String sentence = "";
+        try {
             while (sentence != null) {
-            try {
                 this.receivePacket = new DatagramPacket(new byte[1024], 1024);
                 this.socket.receive(receivePacket);
                 String modifiedSentence = new String(receivePacket.getData());
@@ -44,7 +44,8 @@ public class ClientListener extends Thread{
                 String[] receive = modifiedSentence.trim().split("Q");
                 switch (receive[0]) {
                     case "BYE":
-                        System.exit(0);
+                        sentence = null;
+                        break;
                     case "USEPORT":
                       //  port = Integer.parseInt(receive[1]);
                         userinfo.setPortAddress(Integer.parseInt(receive[1]));
@@ -58,11 +59,15 @@ public class ClientListener extends Thread{
                         
                     default:
                         System.out.println("FROM SERVER:" + modifiedSentence);
+                        break;
                 }
-            } catch (IOException ex) {
-                Logger.getLogger(ClientListener.class.getName()).log(Level.SEVERE, null, ex);
             }
-          }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } finally {
+            if (socket != null)
+                socket.close();
+        }
                
     }
     

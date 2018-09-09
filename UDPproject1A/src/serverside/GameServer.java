@@ -14,17 +14,20 @@ public class GameServer implements Runnable {
 
     private DatagramSocket socket;
     private DatagramPacket packet;
-    private String correctWord = "TESTWORD";
-    private String currentGuess = "********";
+    private String correctWord;
+    private String currentGuess = "";
     private int port;
     private Boolean isBusy;
     private boolean isServingClient;
     private static final int maxbuff = 1024;
 
-    public GameServer(DatagramPacket packet, Boolean isBusy, int port) {
+    public GameServer(DatagramPacket packet, Boolean isBusy, int port, String correctWord) {
         this.packet = packet;
         this.isBusy = isBusy;
-        isServingClient = true;
+        this.isServingClient = true;
+        this.correctWord = correctWord.toUpperCase();
+        for (int i = 0 ;i < correctWord.length(); i++) 
+            currentGuess = currentGuess + "*";
         try {
             this.socket = new DatagramSocket(port + 1);
             this.port = port + 1;
@@ -79,7 +82,13 @@ public class GameServer implements Runnable {
                             break;
                         }
                         replyString = handleGuess(receive[1]);
-                        sendData(replyString.getBytes(), clientIPAddress, clientPort);
+                        if (correctWord.equals(currentGuess)) {
+                            replyString = "You guessed the correct word: " + replyString;
+                            sendData(replyString.getBytes(), clientIPAddress, clientPort);
+                            sendData("BYE".getBytes(), clientIPAddress, clientPort);
+                        }
+                        else
+                            sendData(replyString.getBytes(), clientIPAddress, clientPort);
                         break;
                     case "ALIVE":
                         timeout = System.currentTimeMillis();

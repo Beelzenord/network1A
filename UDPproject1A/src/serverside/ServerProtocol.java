@@ -102,7 +102,7 @@ public class ServerProtocol {
     }
 
     private void startClientThread(DatagramPacket receivePacket, Boolean isBusy) {
-        th = new Thread(new GameServer(receivePacket, isBusy, 9876));
+        th = new Thread(new GameServer(receivePacket, isBusy, 9876, "TESTWORD"));
         th.start();
         System.out.println("returning from connectToClient");
     }

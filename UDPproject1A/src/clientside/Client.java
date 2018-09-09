@@ -37,27 +37,18 @@ public class Client {
             clientListener.start();
 //            String sentence = inFromUser.readLine();
             String sentence = "";
-            while (sentence != null) {
+            while (sentence != null && clientListener.isAlive()) {
   
                 sentence = inFromUser.readLine();
                 sendData = new byte[1024];
                 sendData = sentence.getBytes();
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, userInfo.getIPAddress(), userInfo.getPortAddress());
-                clientSocket.send(sendPacket);
+                if (clientListener.isAlive())
+                    clientSocket.send(sendPacket);
 
-
-
-//                sendData = sentence.getBytes();
-//                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
-//                clientSocket.send(sendPacket);
-//                DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-//                clientSocket.receive(receivePacket);
-//                String modifiedSentence = new String(receivePacket.getData());
-//                System.out.println("FROM SERVER:" + modifiedSentence);
-//                sentence = new String(inFromUser.readLine());
-//                System.out.println("sentence " + sentence);
             }
-            clientSocket.close();
+            if (clientSocket != null)
+                clientSocket.close();
         }
 
     }
