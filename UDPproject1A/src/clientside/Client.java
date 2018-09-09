@@ -46,6 +46,12 @@ public class Client {
                         port = Integer.parseInt(receive[1]);
                         System.out.println("port: " + port);
                         break;
+                    case "ALIVE":
+                        System.out.println("responding to ALIVE");
+                        DatagramPacket sendPacket = new DatagramPacket("ALIVE".getBytes(), "ALIVE".getBytes().length, IPAddress, port);
+                        clientSocket.send(sendPacket);
+                        break;
+                        
                     default:
                         System.out.println("FROM SERVER:" + modifiedSentence);
                 }
@@ -54,7 +60,6 @@ public class Client {
                 sendData = new byte[1024];
                 sendData = sentence.getBytes();
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-                System.out.println("port: " + port);
                 clientSocket.send(sendPacket);
 
 
