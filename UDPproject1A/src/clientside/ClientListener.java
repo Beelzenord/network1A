@@ -39,9 +39,11 @@ public class ClientListener extends Thread{
                 this.receivePacket = new DatagramPacket(new byte[1024], 1024);
                 this.socket.receive(receivePacket);
                 String modifiedSentence = new String(receivePacket.getData());
-                String[] receive = modifiedSentence.trim().split("Q");
+                String[] receive = modifiedSentence.trim().split("/");
                 switch (receive[0]) {
                     case "BYE":
+                        if (receive.length > 1)
+                            System.out.println(receive[1]);
                         sentence = null;
                         break;
                     case "USEPORT":

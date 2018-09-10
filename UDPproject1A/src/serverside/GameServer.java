@@ -47,7 +47,7 @@ public class GameServer implements Runnable {
             return;
         }
         
-        String replyString = "USEPORTQ" + this.port;
+        String replyString = "USEPORT/" + this.port;
         byte[] replyData = new byte[maxbuff];
         replyData = replyString.getBytes();
         
