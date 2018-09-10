@@ -28,18 +28,26 @@ public class Server {
         
         DatagramSocket serverSocket;
         Boolean isBusy = false;
-       
+        String secretWord = "TESTWORD";
+        int port=SERVERPORT;
         try {
-            serverSocket = new DatagramSocket(SERVERPORT);
-
+            
+            if(args.length>=1){
+              //  port = Integer.parseInt(args[0]);
+                port = assignPort(args);
+                secretWord = initializeWord(args);
+            }
+            serverSocket = new DatagramSocket(port);
+            System.out.print ("Opened port " + port + " ");
+            System.out.println("Secret Word is... " + secretWord);
             byte[] receiveData = new byte[1024];
             byte[] sendData = new byte[1024];
             ServerProtocol serverProtocol = new ServerProtocol();
             System.out.println("Awaiting client activity... ");
-            boolean serverOccupied = serverProtocol.pokedByClient(serverSocket, isBusy);
+            boolean serverOccupied = serverProtocol.pokedByClient(serverSocket, isBusy,secretWord);
             
             while(true){
-                serverProtocol.pokedByClient(serverSocket, isBusy);
+                serverProtocol.pokedByClient(serverSocket, isBusy,secretWord);
             }
            
 
@@ -50,6 +58,37 @@ public class Server {
         }
 
     }
+    /**
+     * Look for word that was inserted as an argument
+     */
+    private static String initializeWord(String[] args) {
+       
+           for(int i = 0 ; i < args.length ; i++){
+           String tmp = args[i];
+           //https://stackoverflow.com/questions/5238491/check-if-string-contains-only-letters
+           if(tmp.chars().allMatch(Character::isLetter)){
+               return tmp.toUpperCase();
+           }
+        }
+       
+      return "TESTWORD";
+    }
+    /**
+     * Look for argument where a port number can be derived
+     */
+    private static int assignPort(String[] args) {
+       for(int i = 0 ; i < args.length ; i++){
+           String tmp = args[i];
+           if(tmp.chars().allMatch(Character::isDigit)){
+               return Integer.parseInt(tmp);
+           }
+       }
+       return SERVERPORT;
+    }
+
+  
+
+    
     
     
 }

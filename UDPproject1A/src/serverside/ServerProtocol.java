@@ -21,10 +21,13 @@ public class ServerProtocol {
     private String generatedString;
     private Thread th;
     private boolean busy;
+    private String testWord;
     public ServerProtocol(){
+       // testWord = "TESTWORD";
        //  th = new Thread(new GameServer(receivePacket, isBusy, 9876));
     }
-    public boolean pokedByClient(DatagramSocket socket, Boolean isBusy) {
+    public boolean pokedByClient(DatagramSocket socket, Boolean isBusy,String secretWord) {
+        this.testWord = secretWord;
         this.busy = isBusy;
         byte[] receiveData = new byte[1024];
         byte[] sendData = new byte[1024];
@@ -66,9 +69,8 @@ public class ServerProtocol {
                 socket.send(sendPacket);
                 return false;
             } else {
-                generateString();
                 System.out.println("[From Client] > " + sentence);
-                String ready = "READY " + generatedString.length();
+                String ready = "READY " + testWord.length();
                 sendData = ready.getBytes();
                 sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                 socket.send(sendPacket);
@@ -81,7 +83,7 @@ public class ServerProtocol {
         return true;
     }
     public void rejection(DatagramSocket socket, DatagramPacket receivePacket){
-        System.out.println("Rejection");
+        
         byte[] receiveData = new byte[1024];
         byte[] sendData = new byte[1024];
         String rejectionMessage = new String(receivePacket.getData());
@@ -97,12 +99,10 @@ public class ServerProtocol {
         }
     }
     
-    private void generateString() {
-        this.generatedString = "BROWN";
-    }
+  
 
     private void startClientThread(DatagramPacket receivePacket, Boolean isBusy) {
-        th = new Thread(new GameServer(receivePacket, isBusy, 9876, "TESTWORD"));
+        th = new Thread(new GameServer(receivePacket, isBusy, 9876, testWord));
         th.start();
         System.out.println("returning from connectToClient");
     }

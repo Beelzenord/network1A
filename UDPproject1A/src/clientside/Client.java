@@ -27,11 +27,15 @@ public class Client {
         DatagramSocket clientSocket = new DatagramSocket();
         InetAddress IPAddress = InetAddress.getByName("localhost");
         int port = 9876;
+        if(args.length == 2){
+            IPAddress = InetAddress.getByName(args[0]);
+            port = Integer.parseInt(args[1]);
+        }
         UserInfo userInfo = new UserInfo(IPAddress,port);
         byte[] sendData = new byte[1024];
         byte[] receiveData = new byte[1024];
         boolean linkedWithServer = false;
-        if (pokeServer(IPAddress, clientSocket)) {
+        if (pokeServer(userInfo, clientSocket)) {
             //
             ClientListener clientListener = new ClientListener(clientSocket,userInfo);
             clientListener.start();
@@ -58,7 +62,7 @@ public class Client {
      * protocol is fulfilled then the server accepts the client. if it fails
      * then there is not connection
      */
-    public static boolean pokeServer(InetAddress IPAddress, DatagramSocket clientSocket) {
+    public static boolean pokeServer(UserInfo userInfo, DatagramSocket clientSocket) {
         byte[] sendData = new byte[1024];
         byte[] receiveData = new byte[1024];
         String hello = "HELLO";
@@ -66,11 +70,12 @@ public class Client {
         String start = "START";
         String ready = "READY";
         String receivedString;
+        
         /**
          * Send Hello
          */
         sendData = hello.getBytes();
-        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
+        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, userInfo.getIPAddress(), userInfo.getPortAddress());
         try {
             clientSocket.send(sendPacket); // sends hello
             DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
@@ -82,7 +87,7 @@ public class Client {
                 return false;
             }
             sendData = start.getBytes();
-            sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
+            sendPacket = new DatagramPacket(sendData, sendData.length, userInfo.getIPAddress(), userInfo.getPortAddress());
             clientSocket.send(sendPacket); // sends start
             receivePacket = new DatagramPacket(receiveData, receiveData.length);
             clientSocket.receive(receivePacket);
