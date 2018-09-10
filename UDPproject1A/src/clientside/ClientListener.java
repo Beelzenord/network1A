@@ -65,6 +65,7 @@ public class ClientListener extends Thread{
         finally {
             if (socket != null)
                 socket.close();
+            System.exit(0);
         }
                
     }

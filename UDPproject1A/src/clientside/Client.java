@@ -14,7 +14,6 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import utilities.Util;
 
 /**
  *
@@ -40,22 +39,28 @@ public class Client {
         System.out.println("user port: " + userInfo.getPortAddress());
         if (pokeServer(userInfo, clientSocket)) {
             //
-            ClientListener clientListener = new ClientListener(clientSocket,userInfo);
-            clientListener.start();
-//            String sentence = inFromUser.readLine();
-            String sentence = "";
-            while (sentence != null && clientListener.isAlive()) {
-  
-                sentence = inFromUser.readLine();
-                sendData = new byte[1024];
-                sendData = sentence.getBytes();
-                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, userInfo.getIPAddress(), userInfo.getPortAddress());
-                if (clientListener.isAlive())
-                    clientSocket.send(sendPacket);
+            try {
+                ClientListener clientListener = new ClientListener(clientSocket,userInfo);
+                clientListener.start();
+    //            String sentence = inFromUser.readLine();
+                String sentence = "";
+                while (sentence != null && clientListener.isAlive()) {
 
+                    sentence = inFromUser.readLine();
+                    sendData = new byte[1024];
+                    sendData = sentence.getBytes();
+                    DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, userInfo.getIPAddress(), userInfo.getPortAddress());
+                    if (clientListener.isAlive())
+                        clientSocket.send(sendPacket);
+
+                }
+            } catch (NullPointerException ex) {
+                ex.printStackTrace();
+            } finally {
+                if (clientSocket != null) {
+                    clientSocket.close();
+                }
             }
-            if (clientSocket != null)
-                clientSocket.close();
         }
 
     }
@@ -68,6 +73,8 @@ public class Client {
     public static boolean pokeServer(UserInfo userInfo, DatagramSocket clientSocket) {
         byte[] sendData = new byte[1024];
         byte[] receiveData = new byte[1024];
+        BufferedReader inFromUser
+            = new BufferedReader(new InputStreamReader(System.in));
         String hello = "HELLO";
         String ok = "OK";
         String start = "START";
@@ -78,27 +85,32 @@ public class Client {
          */
         System.out.println("send" + userInfo.getPortAddress());
         sendData = hello.getBytes();
-        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, userInfo.getIPAddress(), userInfo.getPortAddress());
+        DatagramPacket sendPacket = null;
         try {
+            
+            System.out.println("Type HELLO");
+            sendData = inFromUser.readLine().toUpperCase().getBytes();
+            sendPacket = new DatagramPacket(sendData, sendData.length, userInfo.getIPAddress(), userInfo.getPortAddress());
             clientSocket.send(sendPacket); // sends hello
             DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
             clientSocket.receive(receivePacket); // receives ok
-            receivedString = new String(receivePacket.getData());
+            receivedString = new String(receivePacket.getData()).trim();
             System.out.println("[From Server] > " + receivedString);
             if (!receivedString.trim().equals(ok)) {
                 System.out.println("not ok");
                 return false;
             }
-            sendData = start.getBytes();
+            System.out.println("Type START");
+            sendData = inFromUser.readLine().toUpperCase().getBytes();
             sendPacket = new DatagramPacket(sendData, sendData.length, userInfo.getIPAddress(), userInfo.getPortAddress());
             clientSocket.send(sendPacket); // sends start
             receivePacket = new DatagramPacket(receiveData, receiveData.length);
             clientSocket.receive(receivePacket);
-            receivedString = new String(receivePacket.getData());
+            receivedString = new String(receivePacket.getData()).trim();
             System.out.println("[From Server] > " + receivedString);
 
         } catch (IOException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+            ex.printStackTrace();
         }
         return true;
     }

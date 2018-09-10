@@ -31,7 +31,7 @@ public class ServerProtocol {
         try {
             socket.receive(receivePacket);
             System.out.println("Poked by client");
-            String sentence = new String(receivePacket.getData());
+            String sentence = new String(receivePacket.getData()).trim();
             InetAddress IPAddress = receivePacket.getAddress();
             int port = receivePacket.getPort();
             //if there is already a thread handling a separate client
@@ -43,7 +43,7 @@ public class ServerProtocol {
                      return false;
                  }
             }
-            if (!sentence.trim().equals("HELLO")) {
+            if (!sentence.equals("HELLO")) {
                 sendData = "Error at hello".getBytes();
                 sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                 socket.send(sendPacket);
@@ -56,8 +56,8 @@ public class ServerProtocol {
             }
             receivePacket = new DatagramPacket(receiveData, receiveData.length);
             socket.receive(receivePacket);
-            sentence = new String(receivePacket.getData());
-            if ((!sentence.trim().equals("START")) || (!receivePacket.getAddress().equals(IPAddress)) || !(receivePacket.getPort() == port)) {
+            sentence = new String(receivePacket.getData()).trim();
+            if ((!sentence.equals("START")) || (!receivePacket.getAddress().equals(IPAddress)) || !(receivePacket.getPort() == port)) {
                 System.out.println(sentence);
                 sendData = "Error at START".getBytes();
                 sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
@@ -73,6 +73,7 @@ public class ServerProtocol {
             }
 
         } catch (IOException ex) {
+            ex.printStackTrace();
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         }
         startClientThread(receivePacket, serverName, serverPort, wordToGuess);
@@ -82,7 +83,7 @@ public class ServerProtocol {
         System.out.println("Rejection");
         byte[] receiveData = new byte[1024];
         byte[] sendData = new byte[1024];
-        String rejectionMessage = new String(receivePacket.getData());
+        String rejectionMessage = new String(receivePacket.getData()).trim();
         try {
             
             System.out.println("(our client) " + rejectionMessage);

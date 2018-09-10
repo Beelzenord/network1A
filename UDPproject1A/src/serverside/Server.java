@@ -28,7 +28,7 @@ public class Server {
     public static void main(String[] args) {
         
         DatagramSocket serverSocket;
-        String secretWord="";
+        String secretWord="test";
         int port= SERVERPORT;
         try {
             
@@ -49,7 +49,7 @@ public class Server {
             byte[] sendData = new byte[1024];
             ServerProtocol serverProtocol = new ServerProtocol();
             System.out.println("Awaiting client activity... ");
-            boolean serverOccupied = serverProtocol.pokedByClient(serverSocket, serverName, port, secretWord);
+//            boolean serverOccupied = serverProtocol.pokedByClient(serverSocket, serverName, port, secretWord);
             
             while(true){
                 serverProtocol.pokedByClient(serverSocket, serverName, port, secretWord);
