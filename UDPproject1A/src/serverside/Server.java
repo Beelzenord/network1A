@@ -12,6 +12,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import utilities.Util;
 
 /**
  *
@@ -27,21 +28,31 @@ public class Server {
     public static void main(String[] args) {
         
         DatagramSocket serverSocket;
-       
+        String secretWord="";
+        int port= SERVERPORT;
         try {
-            serverSocket = new DatagramSocket(SERVERPORT);
+            
+
+             if(args.length>=1){
+              //  port = Integer.parseInt(args[0]);
+                port = Util.assignPort(args,SERVERPORT);
+                secretWord = Util.initializeWord(args);
+            }
+            serverSocket = new DatagramSocket(port);
+            System.out.print ("Opened port " + port + " ");
+            
             String serverName = "localhost";
-            int serverPort = 9876;
-            String wordToGuess = "TESTWORD";
+            //int serverPort = 9876;
+           
 
             byte[] receiveData = new byte[1024];
             byte[] sendData = new byte[1024];
             ServerProtocol serverProtocol = new ServerProtocol();
             System.out.println("Awaiting client activity... ");
-            boolean serverOccupied = serverProtocol.pokedByClient(serverSocket, serverName, serverPort, wordToGuess);
+            boolean serverOccupied = serverProtocol.pokedByClient(serverSocket, serverName, port, secretWord);
             
             while(true){
-                serverProtocol.pokedByClient(serverSocket, serverName, serverPort, wordToGuess);
+                serverProtocol.pokedByClient(serverSocket, serverName, port, secretWord);
             }
            
 

@@ -64,9 +64,9 @@ public class ServerProtocol {
                 socket.send(sendPacket);
                 return false;
             } else {
-                generateString();
+                
                 System.out.println("[From Client] > " + sentence);
-                String ready = "READY " + generatedString.length();
+                String ready = "READY " + wordToGuess.length();
                 sendData = ready.getBytes();
                 sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
                 socket.send(sendPacket);
