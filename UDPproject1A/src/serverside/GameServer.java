@@ -16,24 +16,22 @@ public class GameServer implements Runnable {
     private DatagramPacket packet;
     private String correctWord;
     private String currentGuess = "";
+    private String serverName;
     private int port;
-    private Boolean isBusy;
     private boolean isServingClient;
     private static final int maxbuff = 1024;
 
-    public GameServer(DatagramPacket packet, Boolean isBusy, int port, String correctWord) {
-        this.packet = packet;
-        this.isBusy = isBusy;
-        this.isServingClient = true;
-        this.correctWord = correctWord.toUpperCase();
-        for (int i = 0 ;i < correctWord.length(); i++) 
-            currentGuess = currentGuess + "*";
+    public GameServer(DatagramPacket packet, String serverName, int port, String correctWord) {
         try {
             this.socket = new DatagramSocket(port + 1);
+            this.packet = packet;
+            this.isServingClient = true;
+            this.correctWord = correctWord.toUpperCase();
+            for (int i = 0 ;i < correctWord.length(); i++) 
+                currentGuess = currentGuess + "*";
             this.port = port + 1;
-            isBusy = true;
+            this.serverName = serverName;
         } catch (SocketException e) {
-            isBusy = false;
             isServingClient = false;
             e.printStackTrace();
         }
@@ -41,26 +39,26 @@ public class GameServer implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("hello in thread");
+        InetAddress clientIPAddress = packet.getAddress();
+        int clientPort = packet.getPort();
+        
         if (!isServingClient) {
-            isBusy = false;
-            // send bye to client
+            sendData("BYE".getBytes(), clientIPAddress, clientPort);
             return;
         }
         
-        long timeout = System.currentTimeMillis();
-        DatagramSocket timerSocket = null;
-        InetAddress clientIPAddress = packet.getAddress();
-        int clientPort = packet.getPort();
         String replyString = "USEPORTQ" + this.port;
         byte[] replyData = new byte[maxbuff];
         replyData = replyString.getBytes();
+        
+        long timeout = System.currentTimeMillis();
+        DatagramSocket timerSocket = null;
         Timer sendAlive = new Timer();
         Timer sendDead = new Timer();
         
         try {
             timerSocket = new DatagramSocket(clientPort -2);
-            createTimers(sendAlive, sendDead, timerSocket, InetAddress.getByName("localhost"), port, clientIPAddress, clientPort);
+            createTimers(sendAlive, sendDead, timerSocket, InetAddress.getByName(serverName), port, clientIPAddress, clientPort);
             sendData(replyData, clientIPAddress, clientPort);
             
             
@@ -73,7 +71,6 @@ public class GameServer implements Runnable {
                 switch (receive[0]) {
                     case "BYE":
                         isServingClient = false;
-                        isBusy = false;
                         break;
                     case "GUESS":
                         timeout = System.currentTimeMillis();;
@@ -92,7 +89,7 @@ public class GameServer implements Runnable {
                         break;
                     case "ALIVE":
                         timeout = System.currentTimeMillis();
-//                        sendData("OK".getBytes(), clientIPAddress, clientPort);
+                        sendData("OK".getBytes(), clientIPAddress, clientPort);
                         break;
                     case "DEADCLIENT":
                         if (System.currentTimeMillis() - timeout > 11000) {
@@ -102,8 +99,10 @@ public class GameServer implements Runnable {
                         break;
                         
                     default:
-                        replyString = "thread reply " + sentence;
+                        replyString = "BYE/Follow the *** protocol";
                         sendData(replyString.getBytes(), clientIPAddress, clientPort);
+                        isServingClient = false;
+                        break;
                 }
             }
 
@@ -112,7 +111,7 @@ public class GameServer implements Runnable {
             e.printStackTrace();
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("protocol was probably broken");
-            replyString = " protocol was probably broken";
+            replyString = "BYE/protocol was probably broken";
             sendData(replyString.getBytes(), clientIPAddress, clientPort);
             e.printStackTrace();
         }

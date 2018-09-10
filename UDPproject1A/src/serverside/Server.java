@@ -27,19 +27,21 @@ public class Server {
     public static void main(String[] args) {
         
         DatagramSocket serverSocket;
-        Boolean isBusy = false;
        
         try {
             serverSocket = new DatagramSocket(SERVERPORT);
+            String serverName = "localhost";
+            int serverPort = 9876;
+            String wordToGuess = "TESTWORD";
 
             byte[] receiveData = new byte[1024];
             byte[] sendData = new byte[1024];
             ServerProtocol serverProtocol = new ServerProtocol();
             System.out.println("Awaiting client activity... ");
-            boolean serverOccupied = serverProtocol.pokedByClient(serverSocket, isBusy);
+            boolean serverOccupied = serverProtocol.pokedByClient(serverSocket, serverName, serverPort, wordToGuess);
             
             while(true){
-                serverProtocol.pokedByClient(serverSocket, isBusy);
+                serverProtocol.pokedByClient(serverSocket, serverName, serverPort, wordToGuess);
             }
            
 

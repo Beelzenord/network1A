@@ -18,7 +18,6 @@ import java.util.logging.Logger;
 public class ClientListener extends Thread{
     private DatagramSocket socket;
     private DatagramPacket receivePacket;
-    private int port;
     private UserInfo userinfo;
     ClientListener(DatagramSocket clientSocket, UserInfo userInfo) {
        this.socket = clientSocket;
@@ -32,7 +31,7 @@ public class ClientListener extends Thread{
     @Override
     public void run() {
         
-        System.out.println("Client thread is running");
+        System.out.println("Client receiving thread is running");
         
         String sentence = "";
         try {
@@ -40,19 +39,15 @@ public class ClientListener extends Thread{
                 this.receivePacket = new DatagramPacket(new byte[1024], 1024);
                 this.socket.receive(receivePacket);
                 String modifiedSentence = new String(receivePacket.getData());
-                System.out.println("got : " + modifiedSentence);
                 String[] receive = modifiedSentence.trim().split("Q");
                 switch (receive[0]) {
                     case "BYE":
                         sentence = null;
                         break;
                     case "USEPORT":
-                      //  port = Integer.parseInt(receive[1]);
                         userinfo.setPortAddress(Integer.parseInt(receive[1]));
-                        System.out.println("port: " + port);
                         break;
                    case "ALIVE":
-                        System.out.println("responding to ALIVE");
                         DatagramPacket sendPacket = new DatagramPacket("ALIVE".getBytes(), "ALIVE".getBytes().length, userinfo.getIPAddress(), userinfo.getPortAddress());
                         socket.send(sendPacket); //change*/
                         break;
@@ -64,7 +59,10 @@ public class ClientListener extends Thread{
             }
         } catch (IOException ex) {
             ex.printStackTrace();
-        } finally {
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            ex.printStackTrace();
+        }
+        finally {
             if (socket != null)
                 socket.close();
         }

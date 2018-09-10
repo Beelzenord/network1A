@@ -20,19 +20,17 @@ public class ServerProtocol {
 
     private String generatedString;
     private Thread th;
-    private boolean busy;
     public ServerProtocol(){
        //  th = new Thread(new GameServer(receivePacket, isBusy, 9876));
     }
-    public boolean pokedByClient(DatagramSocket socket, Boolean isBusy) {
-        this.busy = isBusy;
+    public boolean pokedByClient(DatagramSocket socket, String serverName, int serverPort, String wordToGuess) {
         byte[] receiveData = new byte[1024];
         byte[] sendData = new byte[1024];
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         DatagramPacket sendPacket = null;
-        System.out.println("poked by client");
         try {
             socket.receive(receivePacket);
+            System.out.println("Poked by client");
             String sentence = new String(receivePacket.getData());
             InetAddress IPAddress = receivePacket.getAddress();
             int port = receivePacket.getPort();
@@ -77,7 +75,7 @@ public class ServerProtocol {
         } catch (IOException ex) {
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         }
-        startClientThread(receivePacket, isBusy);
+        startClientThread(receivePacket, serverName, serverPort, wordToGuess);
         return true;
     }
     public void rejection(DatagramSocket socket, DatagramPacket receivePacket){
@@ -101,8 +99,8 @@ public class ServerProtocol {
         this.generatedString = "BROWN";
     }
 
-    private void startClientThread(DatagramPacket receivePacket, Boolean isBusy) {
-        th = new Thread(new GameServer(receivePacket, isBusy, 9876, "TESTWORD"));
+    private void startClientThread(DatagramPacket receivePacket, String serverName, int serverPort, String wordToGuess) {
+        th = new Thread(new GameServer(receivePacket, serverName, serverPort, wordToGuess));
         th.start();
         System.out.println("returning from connectToClient");
     }
