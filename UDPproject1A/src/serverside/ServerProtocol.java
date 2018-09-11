@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,10 +27,16 @@ public class ServerProtocol {
     public boolean pokedByClient(DatagramSocket socket, String serverName, int serverPort, String wordToGuess) {
         byte[] receiveData = new byte[1024];
         byte[] sendData = new byte[1024];
+        DatagramSocket timerSocket = null;
+        Timer sendDead = new Timer();
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         DatagramPacket sendPacket = null;
         try {
+            
             socket.receive(receivePacket);
+            timerSocket = new DatagramSocket(serverPort -2);
+            createTimers(sendDead, timerSocket, InetAddress.getByName(serverName), serverPort);
+            
             System.out.println("Poked by client");
             String sentence = new String(receivePacket.getData()).trim();
             InetAddress IPAddress = receivePacket.getAddress();
@@ -44,9 +51,16 @@ public class ServerProtocol {
                  }
             }
             if (!sentence.equals("HELLO")) {
-                sendData = "Error at hello".getBytes();
+                if (sentence.equals("TIMEOUT"))
+                    sendData = "TIMEOUT, Error at hello, TOO SLOW".getBytes();
+                else
+                    sendData = "Error at hello".getBytes();
                 sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                System.out.println("sendingh: " + new String(sendData));
                 socket.send(sendPacket);
+                sendDead.cancel();
+                if (timerSocket != null)
+                    timerSocket.close();
                 return false;
             } else {
                 System.out.println("[From Client] > " + sentence);
@@ -59,12 +73,18 @@ public class ServerProtocol {
             sentence = new String(receivePacket.getData()).trim();
             if ((!sentence.equals("START")) || (!receivePacket.getAddress().equals(IPAddress)) || !(receivePacket.getPort() == port)) {
                 System.out.println(sentence);
-                sendData = "Error at START".getBytes();
+                if (sentence.equals("TIMEOUT"))
+                    sendData = "TIMEOUT, Error at START, TOO SLOW".getBytes();
+                else
+                    sendData = "Error at START".getBytes();
                 sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+                System.out.println("sendingstart: " + new String(sendData));
                 socket.send(sendPacket);
+                sendDead.cancel();
+                if (timerSocket != null)
+                    timerSocket.close();
                 return false;
             } else {
-                
                 System.out.println("[From Client] > " + sentence);
                 String ready = "READY " + wordToGuess.length();
                 sendData = ready.getBytes();
@@ -75,6 +95,10 @@ public class ServerProtocol {
         } catch (IOException ex) {
             ex.printStackTrace();
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            sendDead.cancel();
+            if (timerSocket != null)
+                timerSocket.close();
         }
         startClientThread(receivePacket, serverName, serverPort, wordToGuess);
         return true;
@@ -109,6 +133,12 @@ public class ServerProtocol {
         return th.isAlive();
     }
    
+    private void createTimers(Timer sendAlive, DatagramSocket timerSocket, 
+                InetAddress serverIP, int serverPort) {
+        // start in 8 seconds and then run every 8 seconds
+        sendAlive.schedule(new CheckForAliveClient(timerSocket, serverIP, serverPort, "TIMEOUT"), 8000);
+    }
+    
     /*
     public boolean getThreadStatus(){
        return this.th.isAlive();

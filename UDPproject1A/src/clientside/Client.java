@@ -97,7 +97,7 @@ public class Client {
             receivedString = new String(receivePacket.getData()).trim();
             System.out.println("[From Server] > " + receivedString);
             if (!receivedString.trim().equals(ok)) {
-                System.out.println("not ok");
+                System.out.println("Unexpected message from server, shuting down");
                 return false;
             }
             System.out.println("Type START");
@@ -107,9 +107,16 @@ public class Client {
             receivePacket = new DatagramPacket(receiveData, receiveData.length);
             clientSocket.receive(receivePacket);
             receivedString = new String(receivePacket.getData()).trim();
+            String[] received = receivedString.split(" ");
+            if (!received[0].equals("READY")) {
+                System.out.println("Unexpected message from server, shuting down");
+                return false;
+            }
             System.out.println("[From Server] > " + receivedString);
 
         } catch (IOException ex) {
+            ex.printStackTrace();
+        } catch (ArrayIndexOutOfBoundsException ex) {
             ex.printStackTrace();
         }
         return true;

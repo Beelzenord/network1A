@@ -48,10 +48,11 @@ public class Server {
             byte[] receiveData = new byte[1024];
             byte[] sendData = new byte[1024];
             ServerProtocol serverProtocol = new ServerProtocol();
-            System.out.println("Awaiting client activity... ");
+            
 //            boolean serverOccupied = serverProtocol.pokedByClient(serverSocket, serverName, port, secretWord);
             
             while(true){
+                System.out.println("Awaiting client activity... ");
                 serverProtocol.pokedByClient(serverSocket, serverName, port, secretWord);
             }
            
