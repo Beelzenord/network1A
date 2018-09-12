@@ -93,7 +93,7 @@ public class Client {
             receivedString = new String(receivePacket.getData()).trim();
             String[] received = receivedString.split("/");
             System.out.println("[From Server] > " + receivedString);
-            if (!receivedString.trim().equals(OK)) {
+            if (!received[0].equals(OK)) {
                 switch(received[0]) {
                     case BUSY:
                         System.out.println(received[1]);
@@ -117,7 +117,7 @@ public class Client {
             receivePacket = new DatagramPacket(receiveData, receiveData.length);
             clientSocket.receive(receivePacket);
             receivedString = new String(receivePacket.getData()).trim();
-            received = receivedString.split("/");
+            received = receivedString.split(" ");
             if (!received[0].equals(READY)) {
                 switch(received[0]) {
                     case BUSY:

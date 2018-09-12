@@ -18,14 +18,13 @@ import java.util.logging.Logger;
  * @author fno
  */
 public class ServerProtocol {
-
-    private String generatedString;
+    private static final int MAXBUFF = 1024;
     private Thread th;
     public ServerProtocol(){
     }
     public boolean pokedByClient(DatagramSocket socket, String serverName, int serverPort, String wordToGuess) {
-        byte[] receiveData = new byte[1024];
-        byte[] sendData = new byte[1024];
+        byte[] receiveData = new byte[MAXBUFF];
+        byte[] sendData = new byte[MAXBUFF];
         DatagramSocket timerSocket = null;
         Timer sendDead = new Timer();
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
