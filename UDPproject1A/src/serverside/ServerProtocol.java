@@ -22,7 +22,6 @@ public class ServerProtocol {
     private String generatedString;
     private Thread th;
     public ServerProtocol(){
-       //  th = new Thread(new GameServer(receivePacket, isBusy, 9876));
     }
     public boolean pokedByClient(DatagramSocket socket, String serverName, int serverPort, String wordToGuess) {
         byte[] receiveData = new byte[1024];
@@ -43,20 +42,19 @@ public class ServerProtocol {
             int port = receivePacket.getPort();
             //if there is already a thread handling a separate client
              if (th!=null){
-                 System.out.println("thread not null");
                  if(th.isAlive()){
-                     System.out.println("Thread is alive");
                      rejection(socket, receivePacket);
                      return false;
                  }
             }
             if (!sentence.equals("HELLO")) {
                 if (sentence.equals("TIMEOUT"))
-                    sendData = "TIMEOUT, Error at hello, TOO SLOW".getBytes();
+                    sendData = "TIMEOUT/Error at hello, TOO SLOW".getBytes();
                 else
-                    sendData = "Error at hello".getBytes();
+                    sendData = "ERROR/Error at hello".getBytes();
                 sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-                System.out.println("sendingh: " + new String(sendData));
+                socket.send(sendPacket);
+                sendPacket = new DatagramPacket(sendData, sendData.length, receivePacket.getAddress(), receivePacket.getPort());
                 socket.send(sendPacket);
                 sendDead.cancel();
                 if (timerSocket != null)
@@ -74,11 +72,12 @@ public class ServerProtocol {
             if ((!sentence.equals("START")) || (!receivePacket.getAddress().equals(IPAddress)) || !(receivePacket.getPort() == port)) {
                 System.out.println(sentence);
                 if (sentence.equals("TIMEOUT"))
-                    sendData = "TIMEOUT, Error at START, TOO SLOW".getBytes();
+                    sendData = "TIMEOUT/Error at START, TOO SLOW".getBytes();
                 else
-                    sendData = "Error at START".getBytes();
+                    sendData = "ERROR/Error at START".getBytes();
                 sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-                System.out.println("sendingstart: " + new String(sendData));
+                socket.send(sendPacket);
+                sendPacket = new DatagramPacket(sendData, sendData.length, receivePacket.getAddress(), receivePacket.getPort());
                 socket.send(sendPacket);
                 sendDead.cancel();
                 if (timerSocket != null)
@@ -111,17 +110,13 @@ public class ServerProtocol {
         try {
             
             System.out.println("(our client) " + rejectionMessage);
-            String string = "A client is already connected";
+            String string = "BUSY/A client is already connected";
             sendData = string.getBytes();
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, receivePacket.getAddress(), receivePacket.getPort());
             socket.send(sendPacket);
         } catch (IOException ex) {
             Logger.getLogger(ServerProtocol.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }
-    
-    private void generateString() {
-        this.generatedString = "BROWN";
     }
 
     private void startClientThread(DatagramPacket receivePacket, String serverName, int serverPort, String wordToGuess) {
@@ -139,9 +134,5 @@ public class ServerProtocol {
         sendAlive.schedule(new CheckForAliveClient(timerSocket, serverIP, serverPort, "TIMEOUT"), 8000);
     }
     
-    /*
-    public boolean getThreadStatus(){
-       return this.th.isAlive();
-    }*/
 
 }

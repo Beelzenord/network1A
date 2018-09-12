@@ -3,19 +3,24 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package clientside;
+//package clientside;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author fno
  */
 public class ClientListener extends Thread{
+    private static final String BYE = "BYE";
+    private static final String USEPORT = "USEPORT";
+    private static final String ALIVE = "ALIVE";
+    private static final String OK = "OK";
+    private static final String GUESSRESPONSE = "GUESSRESPONSE";
+    private static final int MAXBUFF = 1024;
+    
     private DatagramSocket socket;
     private DatagramPacket receivePacket;
     private UserInfo userinfo;
@@ -23,10 +28,6 @@ public class ClientListener extends Thread{
        this.socket = clientSocket;
        this.userinfo = userInfo;
    }
-
-    ClientListener(DatagramSocket clientSocket, Client aThis) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 
     @Override
     public void run() {
@@ -36,24 +37,28 @@ public class ClientListener extends Thread{
         String sentence = "";
         try {
             while (sentence != null) {
-                this.receivePacket = new DatagramPacket(new byte[1024], 1024);
+                this.receivePacket = new DatagramPacket(new byte[MAXBUFF], MAXBUFF);
                 this.socket.receive(receivePacket);
                 String modifiedSentence = new String(receivePacket.getData());
                 String[] receive = modifiedSentence.trim().split("/");
-                switch (receive[0]) {
-                    case "BYE":
+                switch (receive[0].trim()) {
+                    case BYE:
                         if (receive.length > 1)
                             System.out.println(receive[1]);
                         sentence = null;
                         break;
-                    case "USEPORT":
+                    case USEPORT:
                         userinfo.setPortAddress(Integer.parseInt(receive[1]));
                         break;
-                   case "ALIVE":
-                        DatagramPacket sendPacket = new DatagramPacket("ALIVE".getBytes(), "ALIVE".getBytes().length, userinfo.getIPAddress(), userinfo.getPortAddress());
+                    case ALIVE:
+                        DatagramPacket sendPacket = new DatagramPacket(ALIVE.getBytes(), ALIVE.getBytes().length, userinfo.getIPAddress(), userinfo.getPortAddress());
                         socket.send(sendPacket); //change*/
                         break;
-                        
+                    case OK:
+                        break;
+                    case GUESSRESPONSE:
+                        System.out.println(receive[1]);
+                        break;
                     default:
                         System.out.println("FROM SERVER:" + modifiedSentence);
                         break;

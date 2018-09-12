@@ -3,20 +3,25 @@ package serverside;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Timer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class GameServer implements Runnable {
+    private static final String BYE = "BYE";
+    private static final String OK = "OK";
+    private static final String USEPORT = "USEPORT";
+    private static final String GUESS = "GUESS";
+    private static final String ALIVE = "ALIVE";
+    private static final String DEADCLIENT = "DEADCLIENT";
+    private static final String GUESSRESPONSE = "GUESSRESPONSE";
 
     private DatagramSocket socket;
     private DatagramPacket packet;
     private String correctWord;
     private String currentGuess = "";
     private String serverName;
+    private int nrOfGuesses;
     private int port;
     private boolean isServingClient;
     private static final int maxbuff = 1024;
@@ -29,6 +34,7 @@ public class GameServer implements Runnable {
             this.correctWord = correctWord.toUpperCase();
             for (int i = 0 ;i < correctWord.length(); i++) 
                 currentGuess = currentGuess + "*";
+            nrOfGuesses = correctWord.length() + 3;
             this.port = port + 1;
             this.serverName = serverName;
         } catch (SocketException e) {
@@ -43,11 +49,11 @@ public class GameServer implements Runnable {
         int clientPort = packet.getPort();
         
         if (!isServingClient) {
-            sendData("BYE".getBytes(), clientIPAddress, clientPort);
+            sendData(BYE.getBytes(), clientIPAddress, clientPort);
             return;
         }
         
-        String replyString = "USEPORT/" + this.port;
+        String replyString = USEPORT+"/" + this.port;
         byte[] replyData = new byte[maxbuff];
         replyData = replyString.getBytes();
         
@@ -63,43 +69,54 @@ public class GameServer implements Runnable {
             
             
             while (isServingClient) {
-                System.out.println("Thread waiting...");
+                System.out.println("Client server waiting...");
                 packet = new DatagramPacket(new byte[maxbuff], maxbuff);
                 socket.receive(packet);
                 String sentence = new String(packet.getData()).toUpperCase();
                 String[] receive = sentence.trim().split("/");
                 switch (receive[0]) {
-                    case "BYE":
+                    case BYE:
+                        sendData(BYE.getBytes(), clientIPAddress, clientPort);
                         isServingClient = false;
                         break;
-                    case "GUESS":
+                    case GUESS:
                         timeout = System.currentTimeMillis();;
                         if (receive[1].length()>1) {
-                            sendData("Guess only one letter".getBytes(), clientIPAddress, clientPort);
+                            sendData("GUESSRESPONSE/Guess only one letter".getBytes(), clientIPAddress, clientPort);
                             break;
                         }
                         replyString = handleGuess(receive[1]);
                         if (correctWord.equals(currentGuess)) {
-                            replyString = "You guessed the correct word: " + replyString;
+                            replyString = GUESSRESPONSE+"/You guessed the correct word: " + replyString;
                             sendData(replyString.getBytes(), clientIPAddress, clientPort);
-                            sendData("BYE".getBytes(), clientIPAddress, clientPort);
+                            sendData(BYE.getBytes(), clientIPAddress, clientPort);
                         }
-                        else
-                            sendData(replyString.getBytes(), clientIPAddress, clientPort);
+                        else {
+                            if (nrOfGuesses == 0) {
+                                replyString = BYE+"/"+"You ran out of guesses. \n The correct word was: " + correctWord;
+                                sendData(replyString.getBytes(), clientIPAddress, clientPort);
+                            }
+                            else {
+                                nrOfGuesses--;
+                                replyString = GUESSRESPONSE+"/"+replyString;
+                                sendData(replyString.getBytes(), clientIPAddress, clientPort);
+                            }
+
+                        }
                         break;
-                    case "ALIVE":
+                    case ALIVE:
                         timeout = System.currentTimeMillis();
-                        sendData("OK".getBytes(), clientIPAddress, clientPort);
+                        sendData(OK.getBytes(), clientIPAddress, clientPort);
                         break;
-                    case "DEADCLIENT":
+                    case DEADCLIENT:
                         if (System.currentTimeMillis() - timeout > 11000) {
-                            sendData("BYE".getBytes(), clientIPAddress, clientPort);
+                            sendData(BYE.getBytes(), clientIPAddress, clientPort);
                             isServingClient = false;
                         }
                         break;
                         
                     default:
-                        replyString = "BYE/Follow the *** protocol";
+                        replyString = BYE+"/Please follow the protocol";
                         sendData(replyString.getBytes(), clientIPAddress, clientPort);
                         isServingClient = false;
                         break;
@@ -108,19 +125,24 @@ public class GameServer implements Runnable {
 
         } catch (IOException e) {
             System.out.println("Thread could not receive");
+            replyString = BYE+"/Unexpected error";
+            sendData(replyString.getBytes(), clientIPAddress, clientPort);
+            e.printStackTrace();
             e.printStackTrace();
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("protocol was probably broken");
-            replyString = "BYE/protocol was probably broken";
+            replyString = BYE+"/protocol was probably broken";
             sendData(replyString.getBytes(), clientIPAddress, clientPort);
             e.printStackTrace();
         }
         finally{
-             System.out.println("thread ending");
+             System.out.println("Client server ending");
              sendAlive.cancel();
              sendDead.cancel();
-             this.socket.close();
-             timerSocket.close();
+             if (this.socket != null)
+                this.socket.close();
+             if (timerSocket != null)
+                timerSocket.close();
         }
     }
     
@@ -135,7 +157,6 @@ public class GameServer implements Runnable {
             }
             toReturn = toReturn + guess[i];
         }
-        System.out.println("toReturn " + toReturn);
         currentGuess = toReturn;
         return toReturn;
     }
@@ -146,7 +167,7 @@ public class GameServer implements Runnable {
             sendPacket = new DatagramPacket(data, data.length, address, port);
             socket.send(sendPacket);
         } catch (IOException e) {
-            System.out.println("thread could not send ");
+            System.out.println("Client server could not send to Client");
             e.printStackTrace();
         }
     }

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package clientside;
+//package clientside;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,15 +11,22 @@ import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.net.SocketTimeoutException;
 
 /**
  *
  * @author fno
  */
 public class Client {
+    private static final String HELLO = "HELLO";
+    private static final String OK = "OK";
+    private static final String START = "START";
+    private static final String READY = "READY";
+    private static final String ERROR = "ERROR";
+    private static final String TIMEOUT = "TIMEOUT";
+    private static final String BUSY = "BUSY";
+    
+    private static final int MAXBUFF = 1024;
     
     public static void main(String args[]) throws Exception {
         BufferedReader inFromUser
@@ -33,26 +40,19 @@ public class Client {
         }
         
         UserInfo userInfo = new UserInfo(IPAddress,port);
-        byte[] sendData = new byte[1024];
-        byte[] receiveData = new byte[1024];
-        boolean linkedWithServer = false;
-        System.out.println("user port: " + userInfo.getPortAddress());
+        byte[] sendData = new byte[MAXBUFF];
         if (pokeServer(userInfo, clientSocket)) {
-            //
             try {
                 ClientListener clientListener = new ClientListener(clientSocket,userInfo);
                 clientListener.start();
-    //            String sentence = inFromUser.readLine();
                 String sentence = "";
                 while (sentence != null && clientListener.isAlive()) {
-
                     sentence = inFromUser.readLine();
-                    sendData = new byte[1024];
+                    sendData = new byte[MAXBUFF];
                     sendData = sentence.getBytes();
                     DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, userInfo.getIPAddress(), userInfo.getPortAddress());
                     if (clientListener.isAlive())
                         clientSocket.send(sendPacket);
-
                 }
             } catch (NullPointerException ex) {
                 ex.printStackTrace();
@@ -62,7 +62,10 @@ public class Client {
                 }
             }
         }
-
+        else {
+            System.out.println("Unsuccessful poking of the server");
+            System.exit(0);
+        }
     }
 
     /**
@@ -71,23 +74,16 @@ public class Client {
      * then there is not connection
      */
     public static boolean pokeServer(UserInfo userInfo, DatagramSocket clientSocket) {
-        byte[] sendData = new byte[1024];
-        byte[] receiveData = new byte[1024];
+        byte[] sendData = new byte[MAXBUFF];
+        byte[] receiveData = new byte[MAXBUFF];
         BufferedReader inFromUser
             = new BufferedReader(new InputStreamReader(System.in));
-        String hello = "HELLO";
-        String ok = "OK";
-        String start = "START";
-        String ready = "READY";
+
         String receivedString;
-        /**
-         * Send Hello
-         */
-        System.out.println("send" + userInfo.getPortAddress());
-        sendData = hello.getBytes();
+        sendData = HELLO.getBytes();
         DatagramPacket sendPacket = null;
         try {
-            
+            clientSocket.setSoTimeout(4000);
             System.out.println("Type HELLO");
             sendData = inFromUser.readLine().toUpperCase().getBytes();
             sendPacket = new DatagramPacket(sendData, sendData.length, userInfo.getIPAddress(), userInfo.getPortAddress());
@@ -95,9 +91,23 @@ public class Client {
             DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
             clientSocket.receive(receivePacket); // receives ok
             receivedString = new String(receivePacket.getData()).trim();
+            String[] received = receivedString.split("/");
             System.out.println("[From Server] > " + receivedString);
-            if (!receivedString.trim().equals(ok)) {
-                System.out.println("Unexpected message from server, shuting down");
+            if (!receivedString.trim().equals(OK)) {
+                switch(received[0]) {
+                    case BUSY:
+                        System.out.println(received[1]);
+                        break;
+                    case ERROR:
+                        System.out.println(received[1]);
+                        break;
+                    case TIMEOUT:
+                        System.out.println(received[1]);
+                        break;
+                    default:
+                        System.out.println("Unexpected message from server, shuting down");
+                        break;
+                }
                 return false;
             }
             System.out.println("Type START");
@@ -107,18 +117,39 @@ public class Client {
             receivePacket = new DatagramPacket(receiveData, receiveData.length);
             clientSocket.receive(receivePacket);
             receivedString = new String(receivePacket.getData()).trim();
-            String[] received = receivedString.split(" ");
-            if (!received[0].equals("READY")) {
-                System.out.println("Unexpected message from server, shuting down");
+            received = receivedString.split("/");
+            if (!received[0].equals(READY)) {
+                switch(received[0]) {
+                    case BUSY:
+                        System.out.println(received[1]);
+                        break;
+                    case ERROR:
+                        System.out.println(received[1]);
+                        break;
+                    case TIMEOUT:
+                        System.out.println(received[1]);
+                        break;
+                    default:
+                        System.out.println("Unexpected message from server, shuting down");
+                        break;
+                }
                 return false;
             }
+            clientSocket.setSoTimeout(0);
             System.out.println("[From Server] > " + receivedString);
 
+        } catch (SocketTimeoutException ex) {
+            System.out.println("Server is unresponsive");
+            if (clientSocket != null) {
+                clientSocket.close();
+            }
+            return false;
         } catch (IOException ex) {
             ex.printStackTrace();
         } catch (ArrayIndexOutOfBoundsException ex) {
             ex.printStackTrace();
-        }
+        } 
+        
         return true;
     }
 }

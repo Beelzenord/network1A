@@ -5,13 +5,8 @@
  */
 package serverside;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import utilities.Util;
 
 /**
@@ -27,14 +22,11 @@ public class Server {
      */
     public static void main(String[] args) {
         
-        DatagramSocket serverSocket;
+        DatagramSocket serverSocket = null;
         String secretWord="test";
         int port= SERVERPORT;
         try {
-            
-
              if(args.length>=1){
-              //  port = Integer.parseInt(args[0]);
                 port = Util.assignPort(args,SERVERPORT);
                 secretWord = Util.initializeWord(args);
             }
@@ -42,25 +34,18 @@ public class Server {
             System.out.print ("Opened port " + port + " ");
             
             String serverName = "localhost";
-            //int serverPort = 9876;
-           
-
-            byte[] receiveData = new byte[1024];
-            byte[] sendData = new byte[1024];
             ServerProtocol serverProtocol = new ServerProtocol();
-            
-//            boolean serverOccupied = serverProtocol.pokedByClient(serverSocket, serverName, port, secretWord);
             
             while(true){
                 System.out.println("Awaiting client activity... ");
                 serverProtocol.pokedByClient(serverSocket, serverName, port, secretWord);
             }
-           
-
-            /*
-             */
         } catch (SocketException ex) {
-            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Could not start server on port: " + port);
+        } finally {
+            if (serverSocket != null) {
+                serverSocket.close();
+            }
         }
 
     }
