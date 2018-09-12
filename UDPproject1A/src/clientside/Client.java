@@ -135,7 +135,7 @@ public class Client {
                 }
                 return false;
             }
-            clientSocket.setSoTimeout(0);
+            clientSocket.setSoTimeout(15000);
             System.out.println("[From Server] > " + receivedString);
 
         } catch (SocketTimeoutException ex) {
@@ -145,9 +145,7 @@ public class Client {
             }
             return false;
         } catch (IOException ex) {
-            ex.printStackTrace();
         } catch (ArrayIndexOutOfBoundsException ex) {
-            ex.printStackTrace();
         } 
         
         return true;

@@ -52,7 +52,7 @@ public class ClientListener extends Thread{
                         break;
                     case ALIVE:
                         DatagramPacket sendPacket = new DatagramPacket(ALIVE.getBytes(), ALIVE.getBytes().length, userinfo.getIPAddress(), userinfo.getPortAddress());
-                        socket.send(sendPacket); //change*/
+                        socket.send(sendPacket);
                         break;
                     case OK:
                         break;
@@ -60,14 +60,14 @@ public class ClientListener extends Thread{
                         System.out.println(receive[1]);
                         break;
                     default:
-                        System.out.println("FROM SERVER:" + modifiedSentence);
+                        System.out.println("FROM SERVER: " + modifiedSentence);
                         break;
                 }
             }
         } catch (IOException ex) {
-            ex.printStackTrace();
+            System.out.println("Could not receive on socket, shuting down");
         } catch (ArrayIndexOutOfBoundsException ex) {
-            ex.printStackTrace();
+            System.out.println("Server broke the protocol, shuting down");
         }
         finally {
             if (socket != null)
@@ -76,8 +76,5 @@ public class ClientListener extends Thread{
         }
                
     }
-    
-    
-    
     
 }
