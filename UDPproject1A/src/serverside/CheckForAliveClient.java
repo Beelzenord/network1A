@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package serverside;
+//package serverside;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -28,13 +28,14 @@ public class CheckForAliveClient extends TimerTask {
         this.message = message;
     }
     @Override
-    public void run() {
+    public synchronized void run() {
         DatagramPacket sendPacket = null;
         try {
             sendPacket = new DatagramPacket(message.getBytes(), message.getBytes().length, address, port);
             socket.send(sendPacket);
         } catch (IOException ex) {
-            ex.printStackTrace();
+            if (socket != null) 
+                socket.close();
         }
     }
     

@@ -3,13 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package utilities;
+//package serverside;
+
 
 /**
  *
  * @author fno
  */
-public class Util {
+public class UtilServerside {
     public static String initializeWord(String[] args) {
        
            for(int i = 0 ; i < args.length ; i++){

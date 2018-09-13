@@ -3,15 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package serverside;
+//package serverside;
 
+import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import utilities.Util;
 
 /**
  *
@@ -31,8 +29,8 @@ public class Server {
         int port= SERVERPORT;
         try {
              if(args.length>=1){
-                port = Util.assignPort(args,SERVERPORT);
-                secretWord = Util.initializeWord(args);
+                port = UtilServerside.assignPort(args,SERVERPORT);
+                secretWord = UtilServerside.initializeWord(args);
             } 
              if (args.length > 2) {
                  throw new IndexOutOfBoundsException();
@@ -49,13 +47,15 @@ public class Server {
             }
         } catch (SocketException ex) {
             System.out.println("Could not start server on port: " + port);
+        } catch (UnknownHostException ex) {
+            System.out.println("Servername is not known");
+        } catch (IOException ex) {
+            System.out.println("Could not handle clients, shuting down");
         } catch (IllegalArgumentException ex) {
             System.out.println("Valid port is between 1025 and 65535");
         } catch (IndexOutOfBoundsException ex) {
             System.out.println("Maximum 2 arguments, guessing word and port number");
-        } catch (UnknownHostException ex) {
-            System.out.println("Servername is not known");
-        }
+        }  
         finally {
             if (serverSocket != null) {
                 serverSocket.close();

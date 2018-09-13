@@ -3,15 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package serverside;
+//package serverside;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Timer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -22,7 +20,7 @@ public class ServerProtocol {
     private Thread th;
     public ServerProtocol(){
     }
-    public boolean pokedByClient(DatagramSocket socket, String serverName, int serverPort, String wordToGuess) {
+    public boolean pokedByClient(DatagramSocket socket, String serverName, int serverPort, String wordToGuess) throws IOException {
         byte[] receiveData = new byte[MAXBUFF];
         byte[] sendData = new byte[MAXBUFF];
         DatagramSocket timerSocket = null;
@@ -30,22 +28,22 @@ public class ServerProtocol {
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         DatagramPacket sendPacket = null;
         try {
-            
             socket.receive(receivePacket);
-            timerSocket = new DatagramSocket(serverPort -2);
-            createTimers(sendDead, timerSocket, InetAddress.getByName(serverName), serverPort);
-            
             System.out.println("Poked by client");
-            String sentence = new String(receivePacket.getData()).trim();
-            InetAddress IPAddress = receivePacket.getAddress();
-            int port = receivePacket.getPort();
             //if there is already a thread handling a separate client
-             if (th!=null){
+            if (th!=null){
                  if(th.isAlive()){
                      rejection(socket, receivePacket);
                      return false;
                  }
             }
+            
+            timerSocket = new DatagramSocket(serverPort -2);
+            createTimers(sendDead, timerSocket, InetAddress.getByName(serverName), serverPort);
+            String sentence = new String(receivePacket.getData()).trim();
+            InetAddress IPAddress = receivePacket.getAddress();
+            int port = receivePacket.getPort();
+            
             if (!sentence.equals("HELLO")) {
                 if (sentence.equals("TIMEOUT"))
                     sendData = "TIMEOUT/Error at hello, TOO SLOW".getBytes();
@@ -91,8 +89,10 @@ public class ServerProtocol {
             }
 
         } catch (IOException ex) {
-            ex.printStackTrace();
-            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            sendDead.cancel();
+            if (timerSocket != null)
+                timerSocket.close();
+            throw new IOException();
         } finally {
             sendDead.cancel();
             if (timerSocket != null)
@@ -103,8 +103,7 @@ public class ServerProtocol {
     }
     public void rejection(DatagramSocket socket, DatagramPacket receivePacket){
         System.out.println("Rejection");
-        byte[] receiveData = new byte[1024];
-        byte[] sendData = new byte[1024];
+        byte[] sendData = new byte[MAXBUFF];
         String rejectionMessage = new String(receivePacket.getData()).trim();
         try {
             
@@ -114,14 +113,14 @@ public class ServerProtocol {
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, receivePacket.getAddress(), receivePacket.getPort());
             socket.send(sendPacket);
         } catch (IOException ex) {
-            Logger.getLogger(ServerProtocol.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Could not send rejection message to client");
         }
     }
 
     private void startClientThread(DatagramPacket receivePacket, String serverName, int serverPort, String wordToGuess) {
+        System.out.println("STARTING CLIENT TRHEAD");
         th = new Thread(new GameServer(receivePacket, serverName, serverPort, wordToGuess));
         th.start();
-        System.out.println("returning from connectToClient");
     }
     public boolean getGameRunning(){
         return th.isAlive();
@@ -129,7 +128,7 @@ public class ServerProtocol {
    
     private void createTimers(Timer sendAlive, DatagramSocket timerSocket, 
                 InetAddress serverIP, int serverPort) {
-        // start in 8 seconds and then run every 8 seconds
+        // start in 8 seconds, i.e client has 8 seconds to complete the handshake
         sendAlive.schedule(new CheckForAliveClient(timerSocket, serverIP, serverPort, "TIMEOUT"), 8000);
     }
     

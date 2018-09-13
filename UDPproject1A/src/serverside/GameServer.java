@@ -1,4 +1,4 @@
-package serverside;
+//package serverside;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -38,8 +38,10 @@ public class GameServer implements Runnable {
             this.port = port + 1;
             this.serverName = serverName;
         } catch (SocketException e) {
+            System.out.println("Could not create a socket to serve to Client");
             isServingClient = false;
-            e.printStackTrace();
+            if (socket != null)
+                socket.close();
         }
     }
 
@@ -50,6 +52,8 @@ public class GameServer implements Runnable {
         
         if (!isServingClient) {
             sendData(BYE.getBytes(), clientIPAddress, clientPort);
+            if (socket != null)
+                socket.close();
             return;
         }
         
@@ -82,7 +86,8 @@ public class GameServer implements Runnable {
                     case GUESS:
                         timeout = System.currentTimeMillis();;
                         if (receive[1].length()>1) {
-                            sendData("GUESSRESPONSE/Guess only one letter".getBytes(), clientIPAddress, clientPort);
+                            replyString = GUESSRESPONSE+"/Guess only one letter";
+                            sendData(replyString.getBytes(), clientIPAddress, clientPort);
                             break;
                         }
                         replyString = handleGuess(receive[1]);
@@ -93,7 +98,7 @@ public class GameServer implements Runnable {
                         }
                         else {
                             if (nrOfGuesses == 0) {
-                                replyString = BYE+"/"+"You ran out of guesses. \n The correct word was: " + correctWord;
+                                replyString = BYE+"/You ran out of guesses. \n The correct word was: " + correctWord;
                                 sendData(replyString.getBytes(), clientIPAddress, clientPort);
                             }
                             else {
@@ -101,7 +106,6 @@ public class GameServer implements Runnable {
                                 replyString = GUESSRESPONSE+"/"+replyString;
                                 sendData(replyString.getBytes(), clientIPAddress, clientPort);
                             }
-
                         }
                         break;
                     case ALIVE:
@@ -127,13 +131,10 @@ public class GameServer implements Runnable {
             System.out.println("Thread could not receive");
             replyString = BYE+"/Unexpected error";
             sendData(replyString.getBytes(), clientIPAddress, clientPort);
-            e.printStackTrace();
-            e.printStackTrace();
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("protocol was probably broken");
             replyString = BYE+"/protocol was probably broken";
             sendData(replyString.getBytes(), clientIPAddress, clientPort);
-            e.printStackTrace();
         }
         finally{
              System.out.println("Client server ending");
@@ -168,7 +169,9 @@ public class GameServer implements Runnable {
             socket.send(sendPacket);
         } catch (IOException e) {
             System.out.println("Client server could not send to Client");
-            e.printStackTrace();
+            if (socket != null)
+                socket.close();
+            isServingClient = false;
         }
     }
     

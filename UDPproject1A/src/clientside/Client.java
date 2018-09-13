@@ -49,13 +49,16 @@ public class Client {
                 while (sentence != null && clientListener.isAlive()) {
                     sentence = inFromUser.readLine();
                     sendData = new byte[MAXBUFF];
+                    System.out.println("sentence: " + sentence);
                     sendData = sentence.getBytes();
+                    System.out.println(new String(sendData));
                     DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, userInfo.getIPAddress(), userInfo.getPortAddress());
                     if (clientListener.isAlive())
                         clientSocket.send(sendPacket);
                 }
             } catch (NullPointerException ex) {
-                ex.printStackTrace();
+            } catch (IOException ex) {
+                System.out.println("Could not send to server");
             } finally {
                 if (clientSocket != null) {
                     clientSocket.close();
